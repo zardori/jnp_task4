@@ -285,7 +285,7 @@ encounter(Organism<species_t, sp1_eats_m, sp1_eats_p> organism1,
         return std::tuple(organism1, organism2, child.value());
     }
 
-    if (organism1.get_vitality() > organism2.get_vitality) {
+    if (organism1.get_vitality() > organism2.get_vitality()) {
         Organism<species_t, sp1_eats_m, sp1_eats_p> winner1(organism1.get_species(), given_vitality(organism2));
         Organism<species_t, sp2_eats_m, sp2_eats_p> dead2(organism2.get_species(), 0);
         return std::tuple(winner1, dead2, std::nullopt);
@@ -351,9 +351,40 @@ encounter(Organism<species_t, sp1_eats_m, sp1_eats_p> organism1,
 
 }
 */
+
+template<typename species_t, bool eats_m, bool eats_p>
+class OrganismAcc{
+public:
+    Organism<species_t, eats_m, eats_p> m_org;
+    constexpr explicit OrganismAcc(const Organism<species_t, eats_m, eats_p>& org) : m_org(org){}
+};
+
+template<typename species_t, bool acc_eat_m, bool acc_eat_p, bool eat_m, bool eat_p>
+constexpr void enc(OrganismAcc<species_t, acc_eat_m, acc_eat_p>& acc, const Organism<species_t, eat_m, eat_p>& org) {
+    acc.m_org = std::get<0>(encounter(acc.m_org, org));
+}
+
+
+
 template<typename species_t, bool sp1_eats_m, bool sp1_eats_p, typename ... Args>
 constexpr Organism<species_t, sp1_eats_m, sp1_eats_p>
 encounter_series(Organism<species_t, sp1_eats_m, sp1_eats_p> organism1, Args ... args) {
+
+
+    OrganismAcc<species_t, sp1_eats_m, sp1_eats_p> acc(organism1);
+
+    //auto* ptr = new OrganismAcc<species_t, sp1_eats_m, sp1_eats_p>(organism1);
+
+    (..., enc(acc, std::forward<Args>(args)));
+
+    return acc.m_org;
+
+
+    //return (..., std::get<0>(encounter(organism1, std::forward<Args>(args)) ));
+
+
+    // ( init op ... op pack )
+
 
     /*
     va_list list;
