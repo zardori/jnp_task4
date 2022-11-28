@@ -1,11 +1,10 @@
 #ifndef JNP_TASK4_ORGANISM_H
 #define JNP_TASK4_ORGANISM_H
 
-
 #include <cstdint>
 #include <optional>
 #include <tuple>
-#include <cstdarg>
+#include <concepts>
 
 using vitality_t = uint64_t;
 
@@ -56,7 +55,6 @@ requires (sp1_eats_m == sp2_eats_m && sp1_eats_p == sp2_eats_p)
 constexpr std::optional<Organism<species_t, sp1_eats_m, sp1_eats_p>>
 get_child(Organism<species_t, sp1_eats_m, sp1_eats_p> organism1,
           Organism<species_t, sp2_eats_m, sp2_eats_p> organism2) {
-
     if (organism1.get_species() == organism2.get_species()) {
         return Organism<species_t, sp1_eats_m, sp1_eats_p>
                 (organism1.get_species(), (organism1.get_vitality() + organism2.get_vitality()) / 2);
@@ -70,7 +68,6 @@ requires (sp1_eats_m != sp2_eats_m || sp1_eats_p != sp2_eats_p)
 constexpr std::optional<Organism<species_t, sp1_eats_m, sp1_eats_p>>
 get_child(Organism<species_t, sp1_eats_m, sp1_eats_p> organism1,
           Organism<species_t, sp2_eats_m, sp2_eats_p> organism2) {
-
     return std::nullopt;
 }
 
@@ -94,16 +91,15 @@ concept neither_can_eat_other = (is_herbivore<sp1_eats_m, sp1_eats_p> && is_herb
                                 (is_carnivore<sp1_eats_m, sp1_eats_p> && is_plant<sp2_eats_m, sp2_eats_p>) ||
                                 (is_plant<sp1_eats_m, sp1_eats_p> && is_carnivore<sp2_eats_m, sp2_eats_p>);
 
-
 template<bool sp1_eats_m, bool sp1_eats_p, bool sp2_eats_m, bool sp2_eats_p>
 concept left_can_eat_right = (sp1_eats_p && is_plant<sp2_eats_m, sp2_eats_p>) ||
                              (sp1_eats_m && is_herbivore<sp2_eats_m, sp2_eats_p>);
 
-
 template<bool sp1_eats_m, bool sp1_eats_p, bool sp2_eats_m, bool sp2_eats_p>
 concept right_can_eat_left = left_can_eat_right<sp2_eats_m, sp2_eats_p, sp1_eats_m, sp1_eats_p>;
 
-// Omnivore vs Carnivore
+// TODO
+
 template<typename species_t, bool sp1_eats_m, bool sp1_eats_p, bool sp2_eats_m, bool sp2_eats_p>
 requires can_eat_each_other<sp1_eats_m, sp1_eats_p, sp2_eats_m, sp2_eats_p>
 constexpr std::tuple<
@@ -112,21 +108,17 @@ constexpr std::tuple<
         std::optional<Organism<species_t, sp1_eats_m, sp1_eats_p>>>
 encounter(Organism<species_t, sp1_eats_m, sp1_eats_p> organism1,
           Organism<species_t, sp2_eats_m, sp2_eats_p> organism2) {
-
     if (organism1.is_dead() || organism2.is_dead()) {
         return std::tuple(organism1, organism2, std::nullopt);
     }
 
     auto child = get_child(organism1, organism2);
-
     if (child.has_value()) {
         return std::tuple(organism1, organism2, child.value());
     }
 
     using organism1_t = Organism<species_t, sp1_eats_m, sp1_eats_p>;
     using organism2_t = Organism<species_t, sp2_eats_m, sp2_eats_p>;
-
-    // Fight
 
     if (organism1.get_vitality() == organism2.get_vitality()) {
         organism1_t dead1(organism1.get_species(), 0);
@@ -143,11 +135,8 @@ encounter(Organism<species_t, sp1_eats_m, sp1_eats_p> organism1,
                             organism2.get_vitality() + organism1.get_vitality() / 2);
         return std::tuple(dead1, winner2, std::nullopt);
     }
-
-
 }
 
-// Herbivore vs Herbivore or Carnivore vs Plant
 template<typename species_t, bool sp1_eats_m, bool sp1_eats_p, bool sp2_eats_m, bool sp2_eats_p>
 requires neither_can_eat_other<sp1_eats_m, sp1_eats_p, sp2_eats_m, sp2_eats_p>
 constexpr std::tuple<Organism<species_t, sp1_eats_m, sp1_eats_p>,
@@ -155,20 +144,17 @@ constexpr std::tuple<Organism<species_t, sp1_eats_m, sp1_eats_p>,
         std::optional<Organism<species_t, sp1_eats_m, sp1_eats_p>>>
 encounter(Organism<species_t, sp1_eats_m, sp1_eats_p> organism1,
           Organism<species_t, sp2_eats_m, sp2_eats_p> organism2) {
-
     if (organism1.is_dead() || organism2.is_dead()) {
         return std::tuple(organism1, organism2, std::nullopt);
     }
 
     auto child = get_child(organism1, organism2);
-
     if (child.has_value()) {
         return std::tuple(organism1, organism2, child.value());
     }
 
     return std::tuple(organism1, organism2, std::nullopt);
 }
-
 
 template<typename species_t, bool sp1_eats_m, bool sp1_eats_p, bool sp2_eats_m, bool sp2_eats_p>
 requires left_can_eat_right<sp1_eats_m, sp1_eats_p, sp2_eats_m, sp2_eats_p>
@@ -178,13 +164,11 @@ constexpr std::tuple<
         std::optional<Organism<species_t, sp1_eats_m, sp1_eats_p>>>
 encounter(Organism<species_t, sp1_eats_m, sp1_eats_p> organism1,
           Organism<species_t, sp2_eats_m, sp2_eats_p> organism2) {
-
     if (organism1.is_dead() || organism2.is_dead()) {
         return std::tuple(organism1, organism2, std::nullopt);
     }
 
     auto child = get_child(organism1, organism2);
-
     if (child.has_value()) {
         return std::tuple(organism1, organism2, child.value());
     }
@@ -199,7 +183,6 @@ encounter(Organism<species_t, sp1_eats_m, sp1_eats_p> organism1,
     }
 }
 
-
 template<typename species_t, bool sp1_eats_m, bool sp1_eats_p, bool sp2_eats_m, bool sp2_eats_p>
 requires right_can_eat_left<sp1_eats_m, sp1_eats_p, sp2_eats_m, sp2_eats_p>
 constexpr std::tuple<
@@ -208,13 +191,11 @@ constexpr std::tuple<
         std::optional<Organism<species_t, sp1_eats_m, sp1_eats_p>>>
 encounter(Organism<species_t, sp1_eats_m, sp1_eats_p> organism1,
           Organism<species_t, sp2_eats_m, sp2_eats_p> organism2) {
-
     if (organism1.is_dead() || organism2.is_dead()) {
         return std::tuple(organism1, organism2, std::nullopt);
     }
 
     auto child = get_child(organism1, organism2);
-
     if (child.has_value()) {
         return std::tuple(organism1, organism2, child.value());
     }
@@ -238,7 +219,6 @@ constexpr Organism<species_t, o1_eat_m, o1_eat_p> operator+(const Organism<speci
 template<typename species_t, bool sp1_eats_m, bool sp1_eats_p, typename ... Args>
 constexpr Organism<species_t, sp1_eats_m, sp1_eats_p>
 encounter_series(Organism<species_t, sp1_eats_m, sp1_eats_p> organism1, Args ... args) {
-
     return (organism1 + ... + args);
 }
 

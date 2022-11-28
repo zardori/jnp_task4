@@ -3,6 +3,7 @@
 
 using namespace std;
 using species_id_t = uint8_t;
+using species_id_tt = std::string_view;
 
 const  species_id_t dog_id = 1;
 const species_id_t wolf_id = 2;
@@ -14,6 +15,9 @@ int main() {
     constexpr Omnivore<species_id_t> dog(dog_id, 10);
     constexpr Carnivore<species_id_t> wolf(wolf_id, 100);
 
+    constexpr Omnivore<species_id_tt> isPies("pies", 100);
+
+    constexpr auto encounterrrr_result = encounter(dog, isPies);
 
     constexpr auto encounter_result = encounter(wolf, dog);
     constexpr auto wolf_result = get<0>(encounter_result);
