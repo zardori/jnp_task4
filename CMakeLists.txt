@@ -3,4 +3,4 @@ project(jnp_task4)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(jnp_task4 organism_example.cc organism.h)
+add_executable(jnp_task4 encounter_tests.cpp organism.h)

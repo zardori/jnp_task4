@@ -98,8 +98,12 @@ concept left_can_eat_right = (sp1_eats_p && is_plant<sp2_eats_m, sp2_eats_p>) ||
 template<bool sp1_eats_m, bool sp1_eats_p, bool sp2_eats_m, bool sp2_eats_p>
 concept right_can_eat_left = left_can_eat_right<sp2_eats_m, sp2_eats_p, sp1_eats_m, sp1_eats_p>;
 
-// TODO
-
+// 1. Pierwsza reguła encounter jest sprawdzana w ten sposób,
+//    że nie istnieje template encounter z odpowiednimi wymaganiami,
+//    który zmatchuje spotkanie organizmów o różnych typach.
+// 2. Druga reguła jest sprawdzana analogicznie.
+// 6. W poniższej funkcji rozpatrzona jest walka dwóch zwierząt,
+//    jeśli mogą się one nawzajem zjadać.
 template<typename species_t, bool sp1_eats_m, bool sp1_eats_p, bool sp2_eats_m, bool sp2_eats_p>
 requires can_eat_each_other<sp1_eats_m, sp1_eats_p, sp2_eats_m, sp2_eats_p>
 constexpr std::tuple<
@@ -108,10 +112,13 @@ constexpr std::tuple<
         std::optional<Organism<species_t, sp1_eats_m, sp1_eats_p>>>
 encounter(Organism<species_t, sp1_eats_m, sp1_eats_p> organism1,
           Organism<species_t, sp2_eats_m, sp2_eats_p> organism2) {
+    // 3. Sprawdzenie, czy któryś z organizmów nie jest martwy.
     if (organism1.is_dead() || organism2.is_dead()) {
         return std::tuple(organism1, organism2, std::nullopt);
     }
 
+    // 4. Jeśli między zwierzętami doszło do godów,
+    //    to funkcja get_child zwraca nowy organizm.
     auto child = get_child(organism1, organism2);
     if (child.has_value()) {
         return std::tuple(organism1, organism2, child.value());
@@ -120,6 +127,7 @@ encounter(Organism<species_t, sp1_eats_m, sp1_eats_p> organism1,
     using organism1_t = Organism<species_t, sp1_eats_m, sp1_eats_p>;
     using organism2_t = Organism<species_t, sp2_eats_m, sp2_eats_p>;
 
+    // 6. Walka zwierząt.
     if (organism1.get_vitality() == organism2.get_vitality()) {
         organism1_t dead1(organism1.get_species(), 0);
         organism2_t dead2(organism2.get_species(), 0);
@@ -137,6 +145,8 @@ encounter(Organism<species_t, sp1_eats_m, sp1_eats_p> organism1,
     }
 }
 
+// 5. Jeśli organizmy nie potrafią się zjadać, to jest wywoływana poniższa
+//    funkcja, która zwraca organizmy w nienaruszonym stanie.
 template<typename species_t, bool sp1_eats_m, bool sp1_eats_p, bool sp2_eats_m, bool sp2_eats_p>
 requires neither_can_eat_other<sp1_eats_m, sp1_eats_p, sp2_eats_m, sp2_eats_p>
 constexpr std::tuple<Organism<species_t, sp1_eats_m, sp1_eats_p>,
@@ -144,10 +154,13 @@ constexpr std::tuple<Organism<species_t, sp1_eats_m, sp1_eats_p>,
         std::optional<Organism<species_t, sp1_eats_m, sp1_eats_p>>>
 encounter(Organism<species_t, sp1_eats_m, sp1_eats_p> organism1,
           Organism<species_t, sp2_eats_m, sp2_eats_p> organism2) {
+    // 3. Sprawdzenie, czy któryś z organizmów nie jest martwy.
     if (organism1.is_dead() || organism2.is_dead()) {
         return std::tuple(organism1, organism2, std::nullopt);
     }
 
+    // 4. Jeśli między zwierzętami doszło do godów,
+    //    to funkcja get_child zwraca nowy organizm.
     auto child = get_child(organism1, organism2);
     if (child.has_value()) {
         return std::tuple(organism1, organism2, child.value());
@@ -156,6 +169,10 @@ encounter(Organism<species_t, sp1_eats_m, sp1_eats_p> organism1,
     return std::tuple(organism1, organism2, std::nullopt);
 }
 
+// 7. 8. Oba warunki są rozpatrywane w dwóch następnych funkcjach,
+//       gdzie lewy organizm może zjeść prawy organizm i na odwrót.
+//       Reguły 7 i 8 różnią się jedynie zyskiwaną witalnością
+//       przez "zjadającego", stąd funkcja given_vitality(organism).
 template<typename species_t, bool sp1_eats_m, bool sp1_eats_p, bool sp2_eats_m, bool sp2_eats_p>
 requires left_can_eat_right<sp1_eats_m, sp1_eats_p, sp2_eats_m, sp2_eats_p>
 constexpr std::tuple<
@@ -164,16 +181,19 @@ constexpr std::tuple<
         std::optional<Organism<species_t, sp1_eats_m, sp1_eats_p>>>
 encounter(Organism<species_t, sp1_eats_m, sp1_eats_p> organism1,
           Organism<species_t, sp2_eats_m, sp2_eats_p> organism2) {
+    // 3. Sprawdzenie, czy któryś z organizmów nie jest martwy.
     if (organism1.is_dead() || organism2.is_dead()) {
         return std::tuple(organism1, organism2, std::nullopt);
     }
 
+    // 4. Jeśli między zwierzętami doszło do godów,
+    //    to funkcja get_child zwraca nowy organizm.
     auto child = get_child(organism1, organism2);
     if (child.has_value()) {
         return std::tuple(organism1, organism2, child.value());
     }
 
-    if (organism1.get_vitality() > organism2.get_vitality()) {
+    if (organism1.get_vitality() > organism2.get_vitality() || (!sp2_eats_m && !sp2_eats_p)) {
         Organism<species_t, sp1_eats_m, sp1_eats_p> winner1(organism1.get_species(),
                                                             organism1.get_vitality() + given_vitality(organism2));
         Organism<species_t, sp2_eats_m, sp2_eats_p> dead2(organism2.get_species(), 0);
@@ -191,16 +211,19 @@ constexpr std::tuple<
         std::optional<Organism<species_t, sp1_eats_m, sp1_eats_p>>>
 encounter(Organism<species_t, sp1_eats_m, sp1_eats_p> organism1,
           Organism<species_t, sp2_eats_m, sp2_eats_p> organism2) {
+    // 3. Sprawdzenie, czy któryś z organizmów nie jest martwy.
     if (organism1.is_dead() || organism2.is_dead()) {
         return std::tuple(organism1, organism2, std::nullopt);
     }
 
+    // 4. Jeśli między zwierzętami doszło do godów,
+    //    to funkcja get_child zwraca nowy organizm.
     auto child = get_child(organism1, organism2);
     if (child.has_value()) {
         return std::tuple(organism1, organism2, child.value());
     }
 
-    if (organism2.get_vitality() > organism1.get_vitality()) {
+    if (organism2.get_vitality() > organism1.get_vitality() || (!sp1_eats_m && !sp1_eats_p)) {
         Organism<species_t, sp1_eats_m, sp1_eats_p> dead1(organism1.get_species(), 0);
         Organism<species_t, sp2_eats_m, sp2_eats_p> winner2(organism2.get_species(),
                                                             organism2.get_vitality() + given_vitality(organism1));
